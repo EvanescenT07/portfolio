@@ -1,26 +1,267 @@
 @import "tailwindcss";
+@import "tw-animate-css";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@custom-variant dark (&:is(.dark *));
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/* ============================================
+ LIGHT MODE (Digital Sky Theme) 
+============================================
+*/
+:root {
+  --radius: 0.625rem;
+  --transition-duration: 0.5s;
+  --heading-text: oklch(38.21% 0.11 262);
+
+  /* --- Mapped from our Color System --- */
+
+  /* Role: Background -> Light Gray (#F2F2F2) */
+  --background: oklch(96.47% 0 0);
+  /* Role: Primary Text -> Near Black (#111827) */
+  --foreground: oklch(24.4% 0.02 259);
+
+  /* Role: Surface -> Cyan Frost (#A5F3FC) */
+  --card: oklch(93.73% 0.08 193);
+  --popover: oklch(93.73% 0.08 193);
+  --sidebar: oklch(93.73% 0.08 193);
+
+  /* Role: Primary Text -> Teal Blue (#0891B2) */
+  --card-foreground: oklch(59.81% 0.12 201);
+  --popover-foreground: oklch(59.81% 0.12 201);
+  --sidebar-foreground: oklch(59.81% 0.12 201);
+
+  /* Role: Primary Action / Accent -> Navy (#1E3A8A) */
+  --primary: oklch(38.21% 0.11 262);
+  /* Text on Primary: High-contrast (Background color) */
+  --primary-foreground: oklch(98.9% 0.03 189);
+
+  /* Role: Surface -> Cyan Frost (#A5F3FC) */
+  --secondary: oklch(93.73% 0.08 193);
+  --muted: oklch(93.73% 0.08 193);
+  --accent: oklch(93.73% 0.08 193);
+
+  /* Role: Subtle Accent -> Deep Cyan (#0E7490) */
+  --secondary-foreground: oklch(51.05% 0.09 200);
+  --muted-foreground: oklch(51.05% 0.09 200);
+  --accent-foreground: oklch(51.05% 0.09 200);
+
+  /* Role: Subtle Accent -> Deep Cyan (#0E7490) */
+  --border: oklch(51.05% 0.09 200);
+  --input: oklch(51.05% 0.09 200);
+  /* Role: Primary Action for focus rings -> Vibrant Cyan (#22D3EE) */
+  --ring: oklch(38.21% 0.11 262);
+
+  /* --- New Harmonized Colors --- */
+
+  /* Destructive (Red) */
+  --destructive: oklch(65% 0.22 15);
+
+  /* Chart Colors derived from our palette */
+  --chart-1: oklch(82.04% 0.17 197); /* Vibrant Cyan */
+  --chart-2: oklch(59.81% 0.12 201); /* Teal Blue */
+  --chart-3: oklch(60% 0.25 265); /* A complementary Purple */
+  --chart-4: oklch(75% 0.2 145); /* A complementary Green */
+  --chart-5: oklch(70% 0.23 50); /* A complementary Orange */
+}
+
+/* ============================================
+ DARK MODE (Midnight Code Theme) 
+============================================
+*/
+.dark {
+  /* --- Mapped from our Color System --- */
+  --heading-text: oklch(69.15% 0.131 232.39);
+  /* Role: Background -> Dark Blue (#0F2027) */
+  --background: oklch(15.29% 0.02 225);
+  /* Role: Primary Text -> Near White (#F9FAFB) */
+  --foreground: oklch(98.212% 0.00011 271.152);
+
+  /* Role: Surface -> Dark Slate (#1F2937) */
+  --card: oklch(32.99% 0.02 258);
+  --popover: oklch(32.99% 0.02 258);
+  --sidebar: oklch(32.99% 0.02 258);
+
+  /* Role: Primary Text -> Light Slate (#E2E8F0) */
+  --card-foreground: oklch(91.56% 0.01 257);
+  --popover-foreground: oklch(91.56% 0.01 257);
+  --sidebar-foreground: oklch(91.56% 0.01 257);
+
+  /* Role: Primary Action / Accent -> Electric Blue (#38BDF8) */
+  --primary: oklch(69.15% 0.131 232.39);
+  /* Text on Primary: High-contrast (Background color) */
+  --primary-foreground: oklch(24.4% 0.02 259);
+
+  /* Role: Surface -> Dark Slate (#1F2937) */
+  --secondary: oklch(32.99% 0.02 258);
+  --muted: oklch(32.99% 0.02 258);
+  --accent: oklch(32.99% 0.02 258);
+
+  /* Role: Subtle Accent -> Deep Navy (#1E3A8A) */
+  --secondary-foreground: oklch(38.21% 0.11 262);
+  --muted-foreground: oklch(38.21% 0.11 262);
+  --accent-foreground: oklch(38.21% 0.11 262);
+
+  /* Role: Subtle Accent -> Deep Navy (#1E3A8A) */
+  --border: oklch(38.21% 0.11 262);
+  --input: oklch(38.21% 0.11 262);
+  /* Role: Primary Action for focus rings -> Electric Blue (#38BDF8) */
+  --ring: oklch(77.6% 0.15 221);
+
+  /* --- New Harmonized Colors --- */
+
+  /* Destructive (Red) - Brighter for dark mode */
+  --destructive: oklch(70% 0.23 18);
+
+  /* Chart Colors derived from our palette */
+  --chart-1: oklch(77.6% 0.15 221); /* Electric Blue */
+  --chart-2: oklch(38.21% 0.11 262); /* Deep Navy */
+  --chart-3: oklch(65% 0.25 265); /* A complementary Purple */
+  --chart-4: oklch(80% 0.2 145); /* A complementary Green */
+  --chart-5: oklch(75% 0.23 50); /* A complementary Orange */
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+    transition: background-color var(--transition-duration),
+      border-color var(--transition-duration), color var(--transition-duration),
+      opacity var(--transition-duration) ease;
+    scroll-behavior: smooth;
+  }
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  section {
+    scroll-margin-top: 80px;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    html {
+      scroll-behavior: smooth;
+    }
+  }
+
+  /* Global Styling */
+  * {
+    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none; /* Firefox */
+  }
+  *::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Edge, AND Opera */
+  }
+
+  /* Custom font utility classes */
+  .font-poppins {
+    font-family: var(--font-poppins);
+  }
+
+  .font-work-sans {
+    font-family: var(--font-work-sans);
+  }
+
+  .font-comfortaa {
+    font-family: var(--font-comfortaa);
+  }
+
+  .text-heading {
+    color: var(--heading-text);
+  }
+
+  /* Custom CSS */
+  .background {
+    background-color: var(--background);
+  }
+
+  .foreground {
+    color: var(--foreground);
+  }
+
+  /* Gradient Background */
+  .gradient-background {
+    background: linear-gradient(
+      125deg,
+      oklch(96.47% 0 0) 0%,
+      oklch(72.94% 0.02 85) 100%
+    );
+  }
+
+  /* Dark theme gradient */
+  .dark .gradient-background {
+    background: linear-gradient(
+      135deg,
+      oklch(15.29% 0.02 225) 0%,
+      oklch(46.95% 0.05783 215.136) 100%
+    );
+  }
+
+  /* Icon Spin Custom CSS */
+  @keyframes spin {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  .icon-spin {
+    animation: spin 5s linear infinite;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* Font Blink Animation */
+@keyframes blink-color {
+  0%,
+  100% {
+    color: var(--heading-text);
+  }
+  50% {
+    color: var(--foreground);
+  }
+}
+
+.text-blink {
+  animation: blink-color 3s infinite;
 }
