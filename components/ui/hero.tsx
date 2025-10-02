@@ -59,8 +59,8 @@ export const Hero = () => {
       setDownloading(true);
 
       const link = document.createElement("a");
-      link.href = "/assets/CV_ZulfikarAhmadAliansyah.pdf";
-      link.download = "CV_ZulfikarAhmadAliansyah.pdf";
+      link.href = "/docs/CV.pdf";
+      link.download = "CV.pdf";
       link.target = "_blank";
       link.rel = "noopener noreferrer";
 
@@ -72,7 +72,7 @@ export const Hero = () => {
     } catch {
       console.error("Error downloading CV");
       toast.error("Failed to download CV");
-      window.open("/assets/CV_ZulfikarAhmadAliansyah.pdf", "_blank");
+      window.open("/docs/CV.pdf", "_blank");
     } finally {
       setDownloading(false);
     }
