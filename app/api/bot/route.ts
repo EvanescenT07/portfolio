@@ -4,7 +4,6 @@ import OpenAI from "openai";
 const API_KEY = process.env.CHATBOT_API_KEY;
 const BASE_URL = process.env.OPENAI_API_BASE_URL;
 const MODEL = process.env.CHATBOT_MODEL;
-const FALLBACK_MODEL = process.env.CHATBOT_FALLBACK_MODEL;
 
 const client = new OpenAI({
   apiKey: API_KEY,
@@ -32,7 +31,7 @@ function toRole(v: unknown): Exclude<ChatRole, "system"> {
 }
 
 function toContent(v: unknown): string {
-  return String(v ?? "").slice(0, 8000);
+  return String(v ?? "").slice(0, 16000);
 }
 
 function normalizeMessages(input: unknown): ChatMsg[] {
@@ -44,7 +43,6 @@ function normalizeMessages(input: unknown): ChatMsg[] {
   });
 }
 
-// Relaxed per-IP limiter (best-effort; serverless/stateless caveat)
 const isProd = process.env.NODE_ENV === "production";
 const windowMs = 60_000;
 const maxReq = 30;
@@ -134,42 +132,34 @@ export async function POST(req: Request) {
       );
     }
 
-    // Retry with small backoff and optional fallback model
+    // Retry a few times on 429 (rate limit), otherwise fail fast
     const MAX_RETRIES = 2;
     let lastErr: unknown;
-    const modelsToTry = [MODEL, FALLBACK_MODEL].filter(
-      (m): m is string => typeof m === "string" && m.length > 0
-    );
-
-    for (const mdl of modelsToTry) {
-      for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
-        try {
-          const resp = await callModel(mdl, userMessages);
-          const assistant = resp.choices?.[0]?.message?.content ?? "";
-          return NextResponse.json({ messages: assistant });
-        } catch (e: unknown) {
-          lastErr = e;
-          const status = getStatusFromError(e);
-          if (status === 429) {
-            // exponential backoff: 400ms, 800ms, 1600ms...
-            const delay = 400 * Math.pow(2, attempt);
-            await new Promise((r) => setTimeout(r, delay));
-            continue;
-          }
-          // non-429 error, try next model or fail
-          break;
+    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+      try {
+        const resp = await callModel(MODEL, userMessages);
+        const assistant = resp.choices?.[0]?.message?.content ?? "";
+        return NextResponse.json({ messages: assistant });
+      } catch (e: unknown) {
+        lastErr = e;
+        const status = getStatusFromError(e);
+        if (status === 429) {
+          // exponential backoff: 400ms, 800ms, 1600ms...
+          const delay = 400 * Math.pow(2, attempt);
+          await new Promise((r) => setTimeout(r, delay));
+          continue;
         }
+        break;
       }
     }
 
-    // If we exhausted retries/fallback
+    // If we exhausted retries
     const status = getStatusFromError(lastErr);
     const msg =
       status === 429
         ? "Rate limit exceeded, try again shortly."
         : "Failed to process request";
     try {
-      // Avoid leaking sensitive details; log minimal context
       const safeMsg = getMessageFromError(lastErr);
       console.error("Chat API error:", status, safeMsg);
     } catch {
@@ -181,7 +171,6 @@ export async function POST(req: Request) {
       console.error("Chat route fatal error:", getMessageFromError(e));
     } catch {
       // ignore logging failure
-      
     }
     return NextResponse.json(
       { error: "Failed to process request" },

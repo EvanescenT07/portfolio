@@ -1,10 +1,9 @@
 import { useEffect, useRef, useState } from "react";
-import { m } from "framer-motion";
 import { useTimestamp } from "@/hooks/timestamp";
 import { ChatbotProps } from "@/types/chatbot-types";
-import { ChatMarkdown } from "./chat-markdown";
+import { ChatMarkdown } from "@/components/chatbot/chat-markdown";
 
-export const ChatBubble = ({
+export const MessageBubble = ({
   message,
   now,
   isNew,
@@ -48,14 +47,11 @@ export const ChatBubble = ({
   };
 
   return (
-    <m.div
-      initial={{ opacity: 0, y: 6, scale: 0.98 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      transition={{ duration: 0.18, ease: "easeOut" }}
-      className={`flex ${isBot ? "justify-start" : "justify-end"}`}
+    <div
       onClick={skipAnimation}
       role="listitem"
       aria-label={isBot ? "Assistant message" : "Your message"}
+      className={`flex ${isBot ? "justify-start" : "justify-end"}`}
     >
       <div className={`max-w-[80%] ${isBot ? "order-1" : "order-2"}`}>
         <div
@@ -77,8 +73,7 @@ export const ChatBubble = ({
             </span>
             {!isBot && (
               <span className="text-[8px] opacity-70">
-                {" "}
-                {isDelivered ? "✓✓" : "✓"}{" "}
+                {isDelivered ? "✓✓" : "✓"}
               </span>
             )}
           </div>
@@ -89,9 +84,7 @@ export const ChatBubble = ({
             {["👍", "👎", "❤️", "😊"].map((emoji) => (
               <button
                 key={emoji}
-                onClick={() =>
-                  onReaction(message.id ?? message.createdAt, emoji)
-                }
+                onClick={() => onReaction(message.createdAt, emoji)}
                 className="text-xs hover:bg-foreground/10 rounded-full px-2 py-1 transition-colors"
               >
                 {emoji}
@@ -113,6 +106,6 @@ export const ChatBubble = ({
           </div>
         )}
       </div>
-    </m.div>
+    </div>
   );
 };
