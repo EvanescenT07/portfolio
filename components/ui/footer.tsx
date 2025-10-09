@@ -82,7 +82,7 @@ export function Footer() {
                   href={link.href}
                   target="_blank"
                   aria-label={link.label}
-                  className="flex items-center justify-center h-10 w-10 rounded-full text-foreground bg-secondary/30 hover:bg-muted/10"
+                  className="flex items-center justify-center h-10 w-10 rounded-full text-foreground bg-accent/30 hover:bg-muted/10"
                 >
                   {link.icon}
                 </a>

@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  push:
+    branches: [main, development]
+  pull_request:
+    branches: [main, development]
+
+jobs:
+  check-code:
+    runs-on: ubuntu-latest
+
+    env:
+      # EmailJS
+      NEXT_PUBLIC_EMAILJS_USER_ID: ${{ secrets.NEXT_PUBLIC_EMAILJS_USER_ID }}
+      NEXT_PUBLIC_EMAILJS_SERVICE_ID: ${{ secrets.NEXT_PUBLIC_EMAILJS_SERVICE_ID }}
+      NEXT_PUBLIC_EMAILJS_TEMPLATE_ID: ${{ secrets.NEXT_PUBLIC_EMAILJS_TEMPLATE_ID }}
+
+      # Social Media Links
+      NEXT_PUBLIC_SPOTIFY_PATH: ${{ secrets.NEXT_PUBLIC_SPOTIFY_PATH }}
+      NEXT_PUBLIC_GITHUB_PATH: ${{ secrets.NEXT_PUBLIC_GITHUB_PATH }}
+      NEXT_PUBLIC_INSTAGRAM_PATH: ${{ secrets.NEXT_PUBLIC_INSTAGRAM_PATH }}
+      NEXT_PUBLIC_LINKEDIN_PATH: ${{ secrets.NEXT_PUBLIC_LINKEDIN_PATH }}
+
+      # Chatbot
+      OPENAI_API_BASE_URL: ${{ secrets.OPENAI_API_BASE_URL }}
+      CHATBOT_API_KEY: ${{ secrets.CHATBOT_API_KEY }}
+      CHATBOT_MODEL: ${{ secrets.CHATBOT_MODEL }}
+
+      # Site
+      SITE_URL: ${{ secrets.SITE_URL }}
+      NEXT_PUBLIC_VERCEL_URL: ${{ secrets.NEXT_PUBLIC_VERCEL_URL }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Run ESLint
+        run: bun run lint
+
+      - name: Build project
+        run: bun run build

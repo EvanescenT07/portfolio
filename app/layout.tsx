@@ -130,8 +130,8 @@ export default function RootLayout({
             <Navbar />
             <AudioSettingsModal />
             <Logo />
+            <main>{children}</main>
             <FloatingChatbot />
-            {children}
           </AudioProvider>
         </ThemeProvider>
       </body>

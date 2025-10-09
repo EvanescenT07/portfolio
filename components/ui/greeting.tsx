@@ -2,10 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import dayjs from "dayjs";
-import TypeIt from "typeit-react";
 import { useTheme } from "next-themes";
 import { BsChevronDoubleDown } from "react-icons/bs";
+import dayjs from "dayjs";
+import TypeIt from "typeit-react";
 
 // Floating particles component
 const FloatingParticles = () => {
@@ -13,7 +13,7 @@ const FloatingParticles = () => {
 
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none">
-      {[...Array(75)].map((_, i) => (
+      {[...Array(30)].map((_, i) => (
         <motion.div
           key={i}
           className="absolute rounded-full"
@@ -125,7 +125,7 @@ export const Greeting = () => {
     setGreeting(getGreeting());
     const interval = setInterval(() => {
       setGreeting(getGreeting());
-    }, 60000);
+    }, 30 * 1000);
 
     return () => clearInterval(interval);
   }, []);
@@ -146,7 +146,7 @@ export const Greeting = () => {
       }
     };
 
-    window.addEventListener("scroll", handleScroll, { passive: true }); // Add passive for better performance
+    window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
@@ -167,7 +167,7 @@ export const Greeting = () => {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.8, delay: 0.3 }}
-          className="text-4xl md:text-6xl font-bold text-heading mb-4"
+          className="text-4xl md:text-6xl font-bold font-comfortaa text-heading mb-4"
         >
           <TypeIt
             key={greeting.join(",")}
@@ -177,6 +177,8 @@ export const Greeting = () => {
               waitUntilVisible: true,
               loop: true,
               breakLines: false,
+              deleteSpeed: 75,
+                
             }}
           />
         </motion.h1>
@@ -185,7 +187,7 @@ export const Greeting = () => {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.8, delay: 0.6 }}
-          className="text-xl md:text-2xl text-foreground max-w-2xl mx-auto my-5"
+          className="text-xl md:text-2xl text-foreground font-work-sans max-w-2xl mx-auto my-5"
         >
           Welcome to my Portfolio Website
         </motion.p>

@@ -10,6 +10,8 @@ import SpeechRecognition, {
 import { CaffBot } from "@/hooks/caffbot";
 import toast from "react-hot-toast";
 import { AnimatePresence, motion } from "framer-motion";
+import { MessageBubble } from "@/components/chatbot/chat-bubble";
+import { ModalConfirmation } from "@/components/ui/confirmation";
 import {
   MessageCircle,
   Mic,
@@ -19,27 +21,26 @@ import {
   Trash2,
   X,
 } from "lucide-react";
-import { ChatBubble } from "./chat-bubble";
-import { ModalConfirmation } from "../ui/confirmation";
+import { Textarea } from "@/components/ui/textarea";
 
 export const FloatingChatbot = () => {
-  // State
   const [isOpen, setIsOpen] = useState(false);
-  const [messages, setMessages] = useState<ChatbotMessageProps[]>([]);
+  const [message, setMessage] = useState<ChatbotMessageProps[]>([]);
   const [userInput, setUserInput] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [now, setNow] = useState(new Date());
-  const [query, setQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
   const [reactions, setReactions] = useState<{ [messageId: string]: string[] }>(
     {}
   );
   const [isRecording, setIsRecording] = useState(false);
+  const [selectedLanguage, setSelectedLanguage] = useState<"en-US" | "id-ID">(
+    "en-US"
+  );
 
-  // Refs
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
   const listEndRef = useRef<HTMLDivElement | null>(null);
 
-  // Helpers
   const { scrollToBottom } = AutoScroll(listEndRef);
   const { SendChat } = CaffBot("/api/bot");
 
@@ -60,66 +61,65 @@ export const FloatingChatbot = () => {
     resetTranscript,
   } = useSpeechRecognition();
 
-  // Persist messages
-  const saveTimer = useRef<number | null>(null);
+  const quickReplies = [
+    "Tell me about Fikar",
+    "What can you do?",
+    "How to contact Fikar?",
+  ];
 
+  // Load messages from localStorage on mount and ensure all have IDs
   useEffect(() => {
-    if (!messages.length) return;
-    if (saveTimer.current) window.clearTimeout(saveTimer.current);
-    saveTimer.current = window.setTimeout(() => {
+    const savedMessages = localStorage.getItem("caffbot-messages");
+    if (savedMessages) {
       try {
-        localStorage.setItem("caffbot-messages", JSON.stringify(messages));
+        const parsed: ChatbotMessageProps[] = JSON.parse(savedMessages);
+        const withIds = parsed.map((m) =>
+          m.id ? m : { ...m, id: crypto.randomUUID() }
+        );
+        setMessage(withIds);
+        localStorage.setItem("caffbot-messages", JSON.stringify(withIds));
       } catch {
-        toast.error("Failed to save chat history.");
-      }
-      saveTimer.current = null;
-    }, 400);
-  }, [messages]);
-
-  // Load messages on mount
-  useEffect(() => {
-    const SavedMessage = localStorage.getItem("caffbot-messages");
-    if (SavedMessage) {
-      try {
-        const parsed: ChatbotMessageProps[] = JSON.parse(SavedMessage);
-        setMessages(parsed);
-      } catch {
-        // If corrupted, reset
-        setMessages([
-          {
-            role: "assistant",
-            content:
-              "Hello! I'm CaffBot, your personal assistant. How can I help you today?",
-            createdAt: new Date().toISOString(),
-            id: crypto.randomUUID(),
-          },
-        ]);
+        const initialMsg = {
+          id: crypto.randomUUID(),
+          role: "assistant" as const,
+          content:
+            "Hi! I'm Caffbot, your personal assistant. How can I help you today?",
+          createdAt: new Date().toISOString(),
+        };
+        setMessage([initialMsg]);
         localStorage.removeItem("caffbot-messages");
       }
     } else {
-      setMessages([
-        {
-          role: "assistant",
-          content:
-            "Hello! I'm CaffBot, your personal assistant. How can I help you today?",
-          createdAt: new Date().toISOString(),
-          id: crypto.randomUUID(),
-        },
-      ]);
+      const initialMsg = {
+        id: crypto.randomUUID(),
+        role: "assistant" as const,
+        content:
+          "Hi! I'm Caffbot, your personal assistant. How can I help you today?",
+        createdAt: new Date().toISOString(),
+      };
+      setMessage([initialMsg]);
     }
   }, []);
 
-  // Search filter
-  const SearchMessage = useMemo(() => {
-    if (!query.trim()) return messages;
-    const q = query.toLowerCase();
-    return messages.filter((m) => m.content.toLowerCase().includes(q));
-  }, [query, messages]);
+  // Save messages to localStorage
+  useEffect(() => {
+    if (message.length > 0) {
+      localStorage.setItem("caffbot-messages", JSON.stringify(message));
+    }
+  }, [message]);
 
-  // Append transcript to input
+  // Filtered messages based on search query
+  const SearchMessage = useMemo(() => {
+    if (!searchQuery) return message;
+    return message.filter((msg) =>
+      msg.content.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [message, searchQuery]);
+
+  // Update user input from transcript
   useEffect(() => {
     if (transcript) {
-      setUserInput((prev) => (prev + " " + transcript).trimStart());
+      setUserInput((prev) => (prev ? prev + " " : "") + transcript);
     }
   }, [transcript]);
 
@@ -134,7 +134,7 @@ export const FloatingChatbot = () => {
         setIsRecording(true);
         SpeechRecognition.startListening({
           continuous: true,
-          language: "en-US",
+          language: selectedLanguage,
         });
         toast.success("Listening...");
       } else {
@@ -151,12 +151,33 @@ export const FloatingChatbot = () => {
     }
   };
 
-  // Auto-resize + length cap
+  // Language selection
+  const toggleLanguage = () => {
+    const newLanguage = selectedLanguage === "en-US" ? "id-ID" : "en-US";
+    setSelectedLanguage(newLanguage);
+    if (listening) {
+      SpeechRecognition.stopListening();
+      setTimeout(() => {
+        SpeechRecognition.startListening({
+          continuous: true,
+          language: newLanguage,
+        });
+      }, 100);
+    }
+
+    toast.success(
+      `Language switched to ${
+        newLanguage === "en-US" ? "English" : "Indonesian"
+      }`
+    );
+  };
+
+  // Auto-resize textarea
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const textarea = e.target;
-    const next = textarea.value.slice(0, 2000);
-    setUserInput(next);
+    setUserInput(textarea.value);
 
+    // Auto-resize
     textarea.style.height = "auto";
     textarea.style.height = Math.min(textarea.scrollHeight, 120) + "px";
   };
@@ -167,10 +188,10 @@ export const FloatingChatbot = () => {
     return () => clearInterval(interval);
   }, []);
 
-  // Send message to backend
-  const PromptInput = async () => {
+  // User Prompt submission
+  const handleUserPromptSubmission = async () => {
     const userPrompt = userInput.trim();
-    if (!userPrompt || loading) return;
+    if (!userPrompt || isLoading) return;
 
     const userMessage: ChatbotMessageProps = {
       id: crypto.randomUUID(),
@@ -179,48 +200,71 @@ export const FloatingChatbot = () => {
       createdAt: new Date().toISOString(),
     };
 
-    // Optimistic UI
-    setMessages((prev) => [...prev, userMessage]);
-    setUserInput("");
-    setLoading(true);
-    if (inputRef.current) inputRef.current.style.height = "auto";
+    // --- HIGHLIGHT START ---
+    // Create the new messages array *before* updating the state.
+    const newMessages = [...message, userMessage];
 
-    const history = [...messages, userMessage];
+    // Optimistically update the UI with the new array.
+    setMessage(newMessages);
+    setUserInput("");
+    setIsLoading(true);
+    // --- HIGHLIGHT END ---
+
+    // Reset textarea height
+    if (inputRef.current) {
+      inputRef.current.style.height = "auto";
+    }
 
     try {
+      // --- HIGHLIGHT START ---
+      // Send the consistent, updated history to the API.
       const response = await SendChat(
-        history.map(({ role, content }) => ({ role, content }))
+        newMessages.map(({ role, content }) => ({
+          role,
+          content,
+        }))
       );
-
-      const CaffBotResponse: ChatbotMessageProps = {
+      // --- HIGHLIGHT END ---
+      const botResponse: ChatbotMessageProps = {
         id: crypto.randomUUID(),
         role: "assistant",
         content: response,
         createdAt: new Date().toISOString(),
       };
 
-      setMessages((prev) => {
-        const next = [...prev, CaffBotResponse];
-        return next.length > 100 ? next.slice(-100) : next;
-      });
+      // --- HIGHLIGHT START ---
+      // Use a functional update to add the bot's response safely.
+      setMessage((prev) => [...prev, botResponse]);
+      // --- HIGHLIGHT END ---
       resetTranscript();
-    } catch {
-      toast.error("Failed to get response from CaffBot.");
+    } catch (error) {
+      console.error("Error sending message:", error);
+      toast.error("Failed to get response from the server.");
+      setMessage((prev) => [
+        ...prev,
+        {
+          id: crypto.randomUUID(),
+          role: "assistant",
+          content:
+            "Sorry, I'm having trouble responding right now. Please try again later.",
+          createdAt: new Date().toISOString(),
+        },
+      ]);
     } finally {
-      setLoading(false);
-      setTimeout(scrollToBottom, 150);
+      setIsLoading(false);
+      setIsRecording(false);
     }
   };
 
-  // Keyboard shortcut (Enter = send, Shift+Enter = newline)
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      PromptInput();
+  // Enter key handler
+  const onEnter = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (event.key === "Enter" && !event.shiftKey) {
+      event.preventDefault();
+      handleUserPromptSubmission();
     }
   };
 
-  // Reactions
+  // Reaction handler
   const handleReaction = (messageId: string, emoji: string) => {
     setReactions((prev) => {
       const currentReactions = prev[messageId] || [];
@@ -230,33 +274,33 @@ export const FloatingChatbot = () => {
     });
   };
 
-  // Clear chat history (with confirmation)
-  const ClearChat = () => {
-    const userMessage = messages.filter((m) => m.role === "user");
-    if (userMessage.length === 0) {
-      toast.error("No user messages to clear.");
+  // Clear chat
+  const clearChat = () => {
+    const userMessages = message.filter((msg) => msg.role === "user");
+    if (userMessages.length === 0) {
+      toast.error("No messages to clear! Start a conversation first.");
       return;
     }
     openModal({
       title: "Clear Chat History",
       message:
-        "Are you sure you want to clear the chat history? this action cannot be undone",
-      type: "danger",
-      confirmText: "Clear",
+        "Are you sure to want to clear all messages? this action cannot be undone.",
+      confirmText: "Clear All",
       cancelText: "Cancel",
+      type: "danger",
       onConfirm: () => {
-        setMessages([
+        setMessage([
           {
+            id: crypto.randomUUID(),
             role: "assistant",
             content:
-              "Hello! I'm CaffBot, your personal assistant. How can I help you today?",
+              "Hi! I'm Caffbot, your personal assistant. How can I help you today?",
             createdAt: new Date().toISOString(),
-            id: crypto.randomUUID(),
           },
         ]);
         setReactions({});
         localStorage.removeItem("caffbot-messages");
-        toast.success("Chat history cleared.");
+        toast.success("Chat cleared! Ready for a fresh start.");
         closeModal();
       },
     });
@@ -271,11 +315,11 @@ export const FloatingChatbot = () => {
 
   // Scroll to bottom when messages change
   useEffect(() => {
-    setTimeout(scrollToBottom, 100);
-  }, [messages.length, scrollToBottom]);
+    setTimeout(scrollToBottom, 500);
+  }, [message.length, scrollToBottom]);
 
   return (
-    <div className="fixed right-4 bottom-24 sm:bottom-10 md:bottom-14 z-50">
+    <div className="fixed lg:right-12 right-6 bottom-24 sm:bottom-10 md:bottom-10 z-50">
       {modalProps && (
         <ModalConfirmation
           isOpen={isModalOpen}
@@ -295,7 +339,6 @@ export const FloatingChatbot = () => {
           }
         />
       )}
-
       <AnimatePresence initial={false}>
         {isOpen ? (
           <motion.div
@@ -304,87 +347,86 @@ export const FloatingChatbot = () => {
             animate={{ clipPath: "circle(150% at 95% 95%)", opacity: 1 }}
             exit={{ clipPath: "circle(0% at 95% 95%)", opacity: 0 }}
             transition={{ duration: 0.45, ease: [0.4, 0.0, 0.2, 1] }}
-            className="w-[min(360px,90vw)] h-[min(560px,80vh)] md:w-[360px] md:h-[560px] bg-card text-foreground border border-border rounded-2xl shadow-2xl overflow-hidden flex flex-col backdrop-blur-2xl supports-[backdrop-filter]:bg-card/90"
+            className="w-[min(360px,90vw)] h-[min(460px,80vh)] md:w-[360px] md:h-[460px] bg-card text-foreground border border-border rounded-2xl shadow-2xl overflow-hidden flex flex-col backdrop-blur-2xl supports-[backdrop-filter]:bg-card/90"
           >
             {/* Header */}
-            <div className="relative p-4 border-b border-border bg-gradient-to-br from-secondary/60 to-accent/40">
+            <div className="relative p-4 border-b border-foreground/10">
               <div className="flex items-center gap-3">
-                <div className="h-9 w-9 rounded-xl bg-sidebar-primary text-sidebar-primary-foreground grid place-items-center font-bold">
+                <div className="h-9 w-9 rounded-xl bg-foreground/10 text-sidebar-primary-foreground grid place-items-center font-bold font-work-sans">
                   CB
                 </div>
-                <div className="flex-1">
-                  <h2 className="text-base font-semibold leading-tight">
+                <div className="flex-1 ">
+                  <h2 className="text-base font-semibold leading-tight font-comfortaa">
                     CaffBot
                   </h2>
-                  <p className="text-xs text-muted-foreground">
-                    Brain Tumor Assistant
+                  <p className="text-xs text-foreground/70 font-work-sans">
+                    Your personal AI assistant
                   </p>
                 </div>
-
-                {/* Header actions */}
-                <div className="flex gap-1">
+                {/* Action Button */}
+                <div className="flex gap-1 rounded-xl bg-foreground/20">
                   <button
-                    title="Clear chat"
-                    onClick={ClearChat}
-                    className="p-2 rounded-xl hover:bg-muted/70 focus:outline-none"
+                    title="Clear Chat"
+                    onClick={clearChat}
+                    className="p-2 cursor-pointer rounded-xl hover:bg-foreground/10 "
                   >
-                    <Trash2 className="h-4 w-4" />
+                    <Trash2 className="h-5 w-5 text-foreground/70 group-hover:text-red-500 transition-colors" />
                   </button>
                   <button
-                    title="Close chat"
+                    title="Close Chat"
                     onClick={() => setIsOpen(false)}
-                    className="p-2 rounded-xl hover:bg-muted/70 focus:outline-none"
+                    className="p-2 cursor-pointer rounded-xl hover:bg-foreground/10"
                   >
-                    <X className="h-4 w-4" />
+                    <X className="h-5 w-5 text-foreground/70 group-hover:text-foreground transition-colors" />
                   </button>
                 </div>
               </div>
 
-              {/* Search bar */}
-              <div className="mt-3 relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              {/* Search Bar */}
+              <div className="mt-4 relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-foreground" />
                 <input
                   type="text"
                   placeholder="Search messages..."
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 text-sm bg-background/50 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-ring/40"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 text-sm bg-background/50 border border-foreground/40 rounded-lg focus:outline-none focus:ring-2 focus:ring-ring/10"
                 />
               </div>
             </div>
 
             {/* Messages */}
             <div
-              className="flex-1 overflow-y-auto p-4 space-y-3"
+              className="flex-1 overflow-y-auto p-4 space-y-4"
               role="log"
               aria-live="polite"
               aria-label="Chat messages"
             >
               <AnimatePresence initial={false}>
-                {SearchMessage.map((msg, idx) => {
-                  const isLastBot =
-                    idx === SearchMessage.length - 1 &&
+                {SearchMessage.map((msg, index) => {
+                  const isLastBotMessage =
+                    index === SearchMessage.length - 1 &&
                     msg.role === "assistant" &&
-                    !loading &&
+                    !isLoading &&
                     SearchMessage.length > 1 &&
                     SearchMessage[SearchMessage.length - 2].role === "user";
 
                   return (
                     <motion.div
-                      key={msg.id}
+                      key={msg.id ?? `${msg.createdAt}-${index}`}
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -20 }}
                       transition={{
                         duration: 0.3,
-                        delay: idx * 0.05,
+                        delay: 0,
                         ease: "easeOut",
                       }}
                     >
-                      <ChatBubble
+                      <MessageBubble
                         message={msg}
                         now={now}
-                        isNew={isLastBot}
+                        isNew={isLastBotMessage}
                         listEndRef={listEndRef}
                         onReaction={handleReaction}
                         reactions={reactions[msg.id ?? msg.createdAt] || []}
@@ -393,8 +435,8 @@ export const FloatingChatbot = () => {
                   );
                 })}
 
-                {/* Typing indicator */}
-                {loading && (
+                {/* Loading Indicator*/}
+                {isLoading && (
                   <motion.div
                     key="typing"
                     initial={{ opacity: 0, y: 8 }}
@@ -402,11 +444,11 @@ export const FloatingChatbot = () => {
                     exit={{ opacity: 0, y: 8 }}
                     className="flex justify-start"
                   >
-                    <div className="max-w-[80%] bg-muted text-foreground rounded-2xl rounded-bl-none px-4 py-3">
+                    <div className="max-w-[80%] bg-foreground/5 text-foreground rounded-2xl rounded-bl-none px-4 py-3">
                       <div className="flex items-center gap-3">
                         <div className="flex gap-1">
                           <motion.div
-                            className="w-2 h-2 bg-muted-foreground/60 rounded-full"
+                            className="w-2 h-2 bg-foreground/60 rounded-full"
                             animate={{ opacity: [0.4, 1, 0.4] }}
                             transition={{
                               duration: 1.2,
@@ -415,7 +457,7 @@ export const FloatingChatbot = () => {
                             }}
                           />
                           <motion.div
-                            className="w-2 h-2 bg-muted-foreground/60 rounded-full"
+                            className="w-2 h-2 bg-foreground/60 rounded-full"
                             animate={{ opacity: [0.4, 1, 0.4] }}
                             transition={{
                               duration: 1.2,
@@ -424,7 +466,7 @@ export const FloatingChatbot = () => {
                             }}
                           />
                           <motion.div
-                            className="w-2 h-2 bg-muted-foreground/60 rounded-full"
+                            className="w-2 h-2 bg-foreground/60 rounded-full"
                             animate={{ opacity: [0.4, 1, 0.4] }}
                             transition={{
                               duration: 1.2,
@@ -433,7 +475,7 @@ export const FloatingChatbot = () => {
                             }}
                           />
                         </div>
-                        <span className="text-xs text-muted-foreground">
+                        <span className="text-xs text-foreground/70">
                           CaffBot is typing...
                         </span>
                       </div>
@@ -444,45 +486,73 @@ export const FloatingChatbot = () => {
               <div ref={listEndRef} />
             </div>
 
-            {/* Input */}
-            <div className="p-3 border-t border-border bg-background">
-              <div className="flex items-center justify-center gap-2 relative">
-                <textarea
+            {/* Quick Replies */}
+            {!isLoading && userInput.length === 0 && (
+              <div className="px-4 pb-2">
+                <div className="flex gap-2 overflow-x-auto">
+                  {quickReplies.map((reply) => (
+                    <motion.button
+                      key={reply}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => setUserInput(reply)}
+                      className="text-xs bg-foreground/30 hover:bg-foreground/10 rounded-full px-3 py-2 whitespace-nowrap transition-colors"
+                    >
+                      {reply}
+                    </motion.button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Input Field */}
+            <div className="p-3 border-t border-foreground/10">
+              <div className="flex items-center justify-center gap-2">
+                <Textarea
                   ref={inputRef}
                   value={userInput}
                   onChange={handleInputChange}
-                  onKeyDown={handleKeyDown}
-                  placeholder="Type a message or use voice"
-                  disabled={loading}
+                  onKeyDown={onEnter}
+                  placeholder="Type a message..."
+                  disabled={isLoading}
                   rows={1}
-                  className="w-full resize-none placeholder:text-muted-foreground/70 text-xs rounded-2xl bg-input/60 border border-input focus:ring-2 focus:ring-ring/40 focus:outline-none px-4 py-2 scrollbar-none"
-                  style={{ maxHeight: "120px" }}
+                  className="w-full resize-none placeholder:text-foreground/40 text-xs rounded-2xl border border-foreground/70 focus:ring-2 focus:ring-ring/10 focus:outline-none px-4 py-2 "
                 />
-                {userInput.length > 0 && (
-                  <span className="absolute -bottom-1 right-3 translate-y-full text-[10px] text-muted-foreground">
-                    {userInput.length}/2000
-                  </span>
-                )}
 
-                {/* Voice Button */}
-                <motion.button
-                  type="button"
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={handleSpeechRecognition}
-                  title={isRecording ? "Stop recording" : "Start recording"}
-                  className={`p-3 rounded-2xl border border-input hover:bg-accent/60 transition ${
-                    isRecording
-                      ? "bg-red-100 border-red-300 dark:bg-red-900/20"
-                      : "bg-card"
-                  }`}
-                >
-                  {isRecording ? (
-                    <Mic className="h-5 w-5 text-red-600" />
-                  ) : (
-                    <MicOff className="h-5 w-5" />
-                  )}
-                </motion.button>
+                <div className="flex flex-col gap-2">
+                  {/* Voice Button */}
+                  <motion.button
+                    type="button"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={handleSpeechRecognition}
+                    title={isRecording ? "Stop recording" : "Start recording"}
+                    className={`p-3 rounded-2xl border border-foreground/40 hover:bg-accent/60 transition cursor-pointer ${
+                      isRecording
+                        ? "bg-red-100 border-red-300 dark:bg-red-900/20"
+                        : "bg-foreground/1"
+                    }`}
+                  >
+                    {isRecording ? (
+                      <Mic className="h-4 w-4 text-red-600" />
+                    ) : (
+                      <MicOff className="h-4 w-4" />
+                    )}
+                  </motion.button>
+                  {/* Language Switcher */}
+                  <motion.button
+                    type="button"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={toggleLanguage}
+                    title={`Switch to ${
+                      selectedLanguage === "en-US" ? "Indonesian" : "English"
+                    }`}
+                    className="items-center p-3 rounded-2xl border border-foreground/40 hover:bg-accent/60 transition cursor-pointer text-xs font-medium"
+                  >
+                    {selectedLanguage === "en-US" ? "EN" : "ID"}
+                  </motion.button>
+                </div>
 
                 {/* Voice waveform animation */}
                 {isRecording && (
@@ -507,10 +577,9 @@ export const FloatingChatbot = () => {
                   type="button"
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  onClick={PromptInput}
-                  disabled={loading || !userInput.trim()}
-                  title="Send"
-                  className="p-3 rounded-2xl bg-sidebar-primary text-sidebar-primary-foreground hover:opacity-90 disabled:opacity-50 transition-opacity"
+                  onClick={handleUserPromptSubmission}
+                  disabled={isLoading || !userInput.trim()}
+                  className="p-3 rounded-2xl border border-foreground/40 hover:bg-accent/60 transition cursor-pointer disabled:opacity-50"
                 >
                   <Send className="h-5 w-5" />
                 </motion.button>
@@ -527,7 +596,7 @@ export const FloatingChatbot = () => {
             whileTap={{ scale: 0.95 }}
             onClick={() => setIsOpen(true)}
             title="Open chat"
-            className="p-4 rounded-full bg-sidebar-primary text-sidebar-primary-foreground shadow-lg transition-transform"
+            className="absolute bottom-0 right-0 p-4 rounded-full bg-sidebar-primary text-sidebar-primary-foreground shadow-lg transition-transform"
           >
             <MessageCircle className="h-5 w-5" />
           </motion.button>
