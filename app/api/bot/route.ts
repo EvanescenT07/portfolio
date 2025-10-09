@@ -132,45 +132,30 @@ export async function POST(req: Request) {
       );
     }
 
-    // Retry a few times on 429 (rate limit), otherwise fail fast
-    const MAX_RETRIES = 2;
-    let lastErr: unknown;
-    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
-      try {
-        const resp = await callModel(MODEL, userMessages);
-        const assistant = resp.choices?.[0]?.message?.content ?? "";
-        return NextResponse.json({ messages: assistant });
-      } catch (e: unknown) {
-        lastErr = e;
-        const status = getStatusFromError(e);
-        if (status === 429) {
-          // exponential backoff: 400ms, 800ms, 1600ms...
-          const delay = 400 * Math.pow(2, attempt);
-          await new Promise((r) => setTimeout(r, delay));
-          continue;
-        }
-        break;
-      }
-    }
-
-    // If we exhausted retries
-    const status = getStatusFromError(lastErr);
-    const msg =
-      status === 429
-        ? "Rate limit exceeded, try again shortly."
-        : "Failed to process request";
+    // Single API call - no retries
     try {
-      const safeMsg = getMessageFromError(lastErr);
-      console.error("Chat API error:", status, safeMsg);
-    } catch {
-      // ignore logging failure
+      const resp = await callModel(MODEL, userMessages);
+      const assistant = resp.choices?.[0]?.message?.content ?? "";
+      return NextResponse.json({ messages: assistant });
+    } catch (e: unknown) {
+      const status = getStatusFromError(e);
+      const msg =
+        status === 429
+          ? "Rate limit exceeded, try again shortly."
+          : "Failed to process request";
+      try {
+        const safeMsg = getMessageFromError(e);
+        console.error("Chat API error:", status, safeMsg);
+      } catch {
+        console.error("Chat API error, unable to parse error message");
+      }
+      return NextResponse.json({ error: msg }, { status });
     }
-    return NextResponse.json({ error: msg }, { status });
   } catch (e: unknown) {
     try {
       console.error("Chat route fatal error:", getMessageFromError(e));
     } catch {
-      // ignore logging failure
+      console.error("Chat route fatal error, unable to parse error message");
     }
     return NextResponse.json(
       { error: "Failed to process request" },

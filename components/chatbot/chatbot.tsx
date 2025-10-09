@@ -34,6 +34,9 @@ export const FloatingChatbot = () => {
     {}
   );
   const [isRecording, setIsRecording] = useState(false);
+  const [selectedLanguage, setSelectedLanguage] = useState<"en-US" | "id-ID">(
+    "en-US"
+  );
 
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
   const listEndRef = useRef<HTMLDivElement | null>(null);
@@ -131,7 +134,7 @@ export const FloatingChatbot = () => {
         setIsRecording(true);
         SpeechRecognition.startListening({
           continuous: true,
-          language: "en-US",
+          language: selectedLanguage,
         });
         toast.success("Listening...");
       } else {
@@ -146,6 +149,27 @@ export const FloatingChatbot = () => {
       SpeechRecognition.stopListening();
       resetTranscript();
     }
+  };
+
+  // Language selection
+  const toggleLanguage = () => {
+    const newLanguage = selectedLanguage === "en-US" ? "id-ID" : "en-US";
+    setSelectedLanguage(newLanguage);
+    if (listening) {
+      SpeechRecognition.stopListening();
+      setTimeout(() => {
+        SpeechRecognition.startListening({
+          continuous: true,
+          language: newLanguage,
+        });
+      }, 100);
+    }
+
+    toast.success(
+      `Language switched to ${
+        newLanguage === "en-US" ? "English" : "Indonesian"
+      }`
+    );
   };
 
   // Auto-resize textarea
@@ -495,25 +519,40 @@ export const FloatingChatbot = () => {
                   className="w-full resize-none placeholder:text-foreground/40 text-xs rounded-2xl border border-foreground/70 focus:ring-2 focus:ring-ring/10 focus:outline-none px-4 py-2 "
                 />
 
-                {/* Voice Button */}
-                <motion.button
-                  type="button"
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={handleSpeechRecognition}
-                  title={isRecording ? "Stop recording" : "Start recording"}
-                  className={`p-3 rounded-2xl border border-foreground/40 hover:bg-accent/60 transition cursor-pointer ${
-                    isRecording
-                      ? "bg-red-100 border-red-300 dark:bg-red-900/20"
-                      : "bg-foreground/1"
-                  }`}
-                >
-                  {isRecording ? (
-                    <Mic className="h-5 w-5 text-red-600" />
-                  ) : (
-                    <MicOff className="h-5 w-5" />
-                  )}
-                </motion.button>
+                <div className="flex flex-col gap-2">
+                  {/* Voice Button */}
+                  <motion.button
+                    type="button"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={handleSpeechRecognition}
+                    title={isRecording ? "Stop recording" : "Start recording"}
+                    className={`p-3 rounded-2xl border border-foreground/40 hover:bg-accent/60 transition cursor-pointer ${
+                      isRecording
+                        ? "bg-red-100 border-red-300 dark:bg-red-900/20"
+                        : "bg-foreground/1"
+                    }`}
+                  >
+                    {isRecording ? (
+                      <Mic className="h-4 w-4 text-red-600" />
+                    ) : (
+                      <MicOff className="h-4 w-4" />
+                    )}
+                  </motion.button>
+                  {/* Language Switcher */}
+                  <motion.button
+                    type="button"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={toggleLanguage}
+                    title={`Switch to ${
+                      selectedLanguage === "en-US" ? "Indonesian" : "English"
+                    }`}
+                    className="items-center p-3 rounded-2xl border border-foreground/40 hover:bg-accent/60 transition cursor-pointer text-xs font-medium"
+                  >
+                    {selectedLanguage === "en-US" ? "EN" : "ID"}
+                  </motion.button>
+                </div>
 
                 {/* Voice waveform animation */}
                 {isRecording && (

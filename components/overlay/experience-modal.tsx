@@ -69,7 +69,7 @@ export const ExperienceModal = ({
               <div className="p-6 space-y-6">
                 {/* Position */}
                 <div className="space-y-2 font-work-sans">
-                  <div className="flex gap-2 text-primary">
+                  <div className="flex gap-2 text-foreground">
                     <Briefcase className="w-5 h-5" />
                     <span className="font-semibold">Position</span>
                   </div>
@@ -80,7 +80,7 @@ export const ExperienceModal = ({
 
                 {/* Period */}
                 <div className="space-y-2 font-work-sans">
-                  <div className="flex gap-2 text-primary">
+                  <div className="flex gap-2 text-foreground">
                     <Calendar className="w-5 h-5" />
                     <span className="font-semibold">Period</span>
                   </div>
@@ -88,7 +88,7 @@ export const ExperienceModal = ({
                     {data.period.includes("Present") ? (
                       <span>
                         {data.period.split(" - Present")[0]} -{" "}
-                        <span className="text-primary font-bold text-blink">
+                        <span className="text-foreground font-bold text-blink">
                           Present
                         </span>
                       </span>
@@ -100,7 +100,7 @@ export const ExperienceModal = ({
 
                 {/* Description */}
                 <div className="space-y-2 font-work-sans">
-                  <div className="flex gap-2 text-primary">
+                  <div className="flex gap-2 text-foreground">
                     <MdDescription className="w-5 h-5" />
                     <h3 className="font-semibold">Description</h3>
                   </div>
@@ -116,14 +116,14 @@ export const ExperienceModal = ({
                     href={data.href}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-2 px-4 py-2 bg-primary text-foreground rounded-lg hover:bg-primary/60 transition-colors duration-500"
+                    className="flex items-center gap-2 px-4 py-2 bg-foreground/20 text-foreground hover:text-fore rounded-lg  transition-colors duration-500"
                   >
                     <ExternalLink className="w-4 h-4" />
                     Visit Website
                   </Link>
                   <button
                     onClick={onClose}
-                    className="px-4 py-2 bg-muted text-foreground rounded-lg hover:bg-muted/40 transition-colors duration-500 cursor-pointer"
+                    className="px-4 py-2  rounded-lg bg-foreground/20 text-foreground hover:text-foreground/80 transition-colors duration-500 cursor-pointer"
                   >
                     Close
                   </button>

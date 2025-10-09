@@ -60,7 +60,7 @@
   --foreground: oklch(24.4% 0.02 259);
 
   /* Role: Surface -> Cyan Frost (#A5F3FC) */
-  --card: oklch(93.73% 0.08 193);
+  --card: oklch(96.47% 0 0);
   --popover: oklch(93.73% 0.08 193);
   --sidebar: oklch(93.73% 0.08 193);
 
@@ -77,7 +77,7 @@
   /* Role: Surface -> Cyan Frost (#A5F3FC) */
   --secondary: oklch(93.73% 0.08 193);
   --muted: oklch(93.73% 0.08 193);
-  --accent: oklch(93.73% 0.08 193);
+  --accent: oklch(96.47% 0 0);
 
   /* Role: Subtle Accent -> Deep Cyan (#0E7490) */
   --secondary-foreground: oklch(51.05% 0.09 200);

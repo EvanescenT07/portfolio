@@ -29,7 +29,7 @@ export const Photo = () => {
             fill
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
             alt="fikar.dev"
-            className="object-contain rounded-full mix-blend-lighten"
+            className="object-contain rounded-full"
           />
         </motion.div>
 
@@ -63,4 +63,3 @@ export const Photo = () => {
     </div>
   );
 };
-
