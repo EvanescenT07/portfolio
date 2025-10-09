@@ -84,7 +84,9 @@ export const MessageBubble = ({
             {["👍", "👎", "❤️", "😊"].map((emoji) => (
               <button
                 key={emoji}
-                onClick={() => onReaction(message.createdAt, emoji)}
+                onClick={() =>
+                  onReaction(message.id ?? message.createdAt, emoji)
+                }
                 className="text-xs hover:bg-foreground/10 rounded-full px-2 py-1 transition-colors"
               >
                 {emoji}
